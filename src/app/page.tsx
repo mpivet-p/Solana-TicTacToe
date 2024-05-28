@@ -1,25 +1,35 @@
 "use client";
-import Image from "next/image";
-import Wallet from "../components/Wallet";
+import React, { useMemo } from "react";
 import NewGameForm from "@/components/NewGameForm";
-import WalletConnect from "@/components/WalletConnect";
-import TicTacToeGame from "@/components/TicTacToeGame";
+import dynamic from "next/dynamic";
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { clusterApiUrl } from '@solana/web3.js';
 
+require('@solana/wallet-adapter-react-ui/styles.css');
+
+const WalletMultiButtonDynamic = dynamic(() => import('@solana/wallet-adapter-react-ui').then(mod => mod.WalletMultiButton), { ssr: false });
 
 export default function Home() {
-  const accountAddress = localStorage.getItem("GameAddress");
+
+  const network = WalletAdapterNetwork.Devnet;
+  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const wallets = useMemo(() => [], [network]);
+
   return (
     <div className="flex h-screen flex-col p-2">
-      <WalletConnect />
-      <h1 className="text-5xl">Solana <span className="font-black">Tic Tac Toe</span></h1>
-      <Wallet>
-        {accountAddress &&
-          <TicTacToeGame />
-        }
-        {!accountAddress &&
+      <ConnectionProvider endpoint={endpoint}>
+        <WalletProvider wallets={wallets} autoConnect>
+          <WalletModalProvider>
+          <div className='w-full flex justify-end'>
+            <WalletMultiButtonDynamic/>
+          </div>
+          <h1 className="text-5xl">Solana <span className="font-black">Tic Tac Toe</span></h1>
           <NewGameForm />
-        }
-      </Wallet>
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
     </div>
   );
 }
