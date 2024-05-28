@@ -1,11 +1,30 @@
 "use client";
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapter-react';
 import React, { useEffect, useState } from 'react'
+import * as anchor from '@project-serum/anchor';
+import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet';
+
+const PROGRAM_ID = "H4bSrBW7fkzj4AeaJD5AVdzR3fcBM4DMykcKqHpen48v";
 
 const NewGameForm = () => {
   const wallet = useWallet();
 
   const [pubkey, setPubkey] = useState("");
+  const { connection } = useConnection();
+  const anchorWallet = useAnchorWallet();
+
+
+  useEffect(() => {
+    let provider: anchor.Provider;
+
+    // provider = anchor.getProvider();
+    try {
+      provider = anchor.getProvider();
+    } catch {
+      provider = new anchor.AnchorProvider(connection, anchorWallet as anchor.Wallet, {});
+      anchor.setProvider(provider);
+    }
+  }, [])
 
   useEffect(() => {
     if (wallet.connected === true && wallet.publicKey?.toString() != pubkey) {
@@ -17,7 +36,6 @@ const NewGameForm = () => {
   const onSubmit = (event: any) => {
     event.preventDefault();
     // console.log(event.target.elements.addr2.value);
-    localStorage.setItem("GameAddress", ".");
   }
 
   return (

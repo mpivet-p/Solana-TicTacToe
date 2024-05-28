@@ -22,10 +22,12 @@ export default function Home() {
       <ConnectionProvider endpoint={endpoint}>
         <WalletProvider wallets={wallets} autoConnect>
           <WalletModalProvider>
-          <div className='w-full flex justify-end'>
+          <div className='absolute right-2'>
             <WalletMultiButtonDynamic/>
           </div>
-          <h1 className="text-5xl">Solana <span className="font-black">Tic Tac Toe</span></h1>
+          <h1 className="text-5xl">
+            Solana <span className="font-black">Tic Tac Toe</span>
+            </h1>
           <NewGameForm />
         </WalletModalProvider>
       </WalletProvider>
