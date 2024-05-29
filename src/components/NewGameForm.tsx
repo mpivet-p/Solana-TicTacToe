@@ -1,15 +1,17 @@
 "use client";
 import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapter-react';
-import React, { useEffect, useState } from 'react'
+import React, { use, useEffect, useState } from 'react'
 import * as anchor from '@project-serum/anchor';
-import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet';
+import * as web3 from '@solana/web3.js';
+import idl from '../../tictactoe.json';
 
 const PROGRAM_ID = "H4bSrBW7fkzj4AeaJD5AVdzR3fcBM4DMykcKqHpen48v";
 
 const NewGameForm = () => {
   const wallet = useWallet();
 
-  const [pubkey, setPubkey] = useState("");
+  const [pubkey, setPubkey] = useState<string>("");
+  const [program, setProgram] = useState<anchor.Program<anchor.Idl>>();
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
 
@@ -17,25 +19,62 @@ const NewGameForm = () => {
   useEffect(() => {
     let provider: anchor.Provider;
 
-    // provider = anchor.getProvider();
     try {
       provider = anchor.getProvider();
     } catch {
       provider = new anchor.AnchorProvider(connection, anchorWallet as anchor.Wallet, {});
       anchor.setProvider(provider);
     }
+    const tmpProgram: anchor.Program<anchor.Idl> = new anchor.Program(idl as anchor.Idl, PROGRAM_ID);
+    setProgram(tmpProgram);
   }, [])
 
   useEffect(() => {
     if (wallet.connected === true && wallet.publicKey?.toString() != pubkey) {
-      console.log(wallet);
       setPubkey(wallet.publicKey?.toString() || "");
     }
   }, [wallet])
 
-  const onSubmit = (event: any) => {
+  const onClick = async (pubkey: web3.PublicKey) => {
+    const newAccount = anchor.web3.Keypair.generate();
+
+    if (wallet && wallet.publicKey) {
+      try {
+        const transaction = await program?.methods
+          .createGame(pubkey)
+          .accounts({
+            game: newAccount.publicKey,
+            user: wallet.publicKey,
+            systemProgram: anchor.web3.SystemProgram.programId,
+          })
+          .signers([newAccount]) //Need this else it says missing signature
+          .transaction();
+  
+        if (transaction && wallet.signTransaction) {
+          transaction.feePayer = wallet.publicKey;
+          transaction.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+          
+          transaction.partialSign(newAccount); //Need this else it says missing signature
+
+          //Signature with the user's wallet
+          const signedTransaction = await wallet.signTransaction(transaction);
+          // Sending to rpc          
+          const txid = await connection.sendRawTransaction(signedTransaction.serialize());
+          
+          window.location.href = `/game/${newAccount.publicKey.toString()}`;
+          // console.log("Transaction ID:", txid);
+          // console.log("Program Account Address", newAccount.publicKey.toString());
+        }
+      } catch (error) {
+        console.error("Transaction failed:", error);
+      }
+    }
+  };
+
+  const onSubmit = async (event: any) => {
     event.preventDefault();
-    // console.log(event.target.elements.addr2.value);
+    const pubkey = new web3.PublicKey(event.target.elements.addr2.value);
+    await onClick(pubkey);
   }
 
   return (

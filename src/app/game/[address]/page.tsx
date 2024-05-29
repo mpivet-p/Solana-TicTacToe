@@ -3,11 +3,12 @@ import React, { ReactNode } from 'react'
 
 export default function Home({ params }
   : {
-    params: {id: string}
+    params: {address: string}
   }): ReactNode {
   return (
     <div className='flex h-screen flex-col p-2'>
-      <TicTacToeGame />
+      {/* <TicTacToeGame /> */}
+      <p>{params.address}</p>
     </div>
   );
 
