@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import NewGameForm from "@/components/NewGameForm";
 import dynamic from "next/dynamic";
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { clusterApiUrl } from '@solana/web3.js';
 

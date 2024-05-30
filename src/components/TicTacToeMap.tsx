@@ -3,49 +3,32 @@ import React, { useEffect, useState } from 'react';
 import Square from './Square';
 import './tictactoe.css';
 import { useWallet, WalletContextState } from '@solana/wallet-adapter-react';
+import { type GameAccount } from '@/utils/GameAccount';
+import Link from 'next/link';
+import { setServers } from 'dns';
 
-const TicTacToeMap = () => {
+const TicTacToeMap = ({ gameData, play, refresh }: {
+  gameData: GameAccount,
+  play: (coordinates: number, f: (n: number) => void) => void,
+  refresh: () => void
+}) => {
   const wallet: WalletContextState = useWallet();
 
-  const [selected, setSelected] = useState(null);
-  const [map, setMap] = useState([0, 0, 0, 0, 0, 0, 0, 0, 0])
+  const [selected, setSelected] = useState<number>(-1);
 
-  //TMP
-  const x: number[] = [0, 0, 1, 0, 0, 1, 0, 0, 0];
-  const o: number[] = [1, 0, 0, 0, 1, 0, 0, 0, 0];
-  const players: string[] = ["3vGRegbBSpitpMyxdY71jBZUoKSvHtvYfTPexVp88zXP", "3vGRegbBSpitpMyxdY71jBZUoKSvHtvYfTPexVp88zXP"];
-  const toPlay = 0;
-  const status: string = "won";
-  const playing: boolean = players[toPlay] === wallet.publicKey?.toString() && status === "playing";
+  const toPlay = gameData.status;
+  const map = gameData.map;
+  const status: string = gameData.status <= 1 ? "playing" : "won";
+  const playing: boolean = gameData.status <= 1 && gameData.players[gameData.status] === wallet.publicKey?.toString();
 
-  useEffect(() => {
-    const tmp = [...map];
-    for (let i = 0; i < 9; i++) {
-      if (x[i]) {
-        tmp[i] = 1;
-      } else if (o[i]) {
-        tmp[i] = 2;
-      }
-    }
-    setMap(tmp);
-  }, [])
-
-  const refresh = () => {
-    console.log(localStorage.getItem("GameAddress"));
-    console.log("refresh");
-  }
+  console.log(gameData);
 
   const sendPlay = () => {
-    console.log("play");
-    localStorage.setItem("GameAddress", "value");
-  }
-
-  const newGame = () => {
-    localStorage.removeItem("GameAddress");
+    play(selected, setSelected);
   }
 
   return (
-    <div className="flex flex-col w-full my-10 items-center">
+    <div className="flex flex-col w-full my-10 items-center min-w-64">
       {status === "playing" &&
         <>
           <div className='controls my-5 w-full'>
@@ -57,19 +40,19 @@ const TicTacToeMap = () => {
         </>
       }
       <div>
-        <Square map={map} index={1} selected={selected} setSelected={setSelected} playing={playing} player={toPlay}/>
+        <Square map={map} index={0} selected={selected} setSelected={setSelected} playing={playing} player={toPlay}/>
+        <Square map={map} index={1} selected={selected} setSelected={setSelected} playing={playing} player={toPlay} />
         <Square map={map} index={2} selected={selected} setSelected={setSelected} playing={playing} player={toPlay} />
-        <Square map={map} index={3} selected={selected} setSelected={setSelected} playing={playing} player={toPlay} />
       </div>
       <div>
+        <Square map={map} index={3} selected={selected} setSelected={setSelected} playing={playing} player={toPlay} />
         <Square map={map} index={4} selected={selected} setSelected={setSelected} playing={playing} player={toPlay} />
         <Square map={map} index={5} selected={selected} setSelected={setSelected} playing={playing} player={toPlay} />
-        <Square map={map} index={6} selected={selected} setSelected={setSelected} playing={playing} player={toPlay} />
       </div>
       <div>
+        <Square map={map} index={6} selected={selected} setSelected={setSelected} playing={playing} player={toPlay} />
         <Square map={map} index={7} selected={selected} setSelected={setSelected} playing={playing} player={toPlay} />
         <Square map={map} index={8} selected={selected} setSelected={setSelected} playing={playing} player={toPlay} />
-        <Square map={map} index={9} selected={selected} setSelected={setSelected} playing={playing} player={toPlay} />
       </div>
       {status === "playing" &&
         <div className='m-5 w-full'>
@@ -89,7 +72,7 @@ const TicTacToeMap = () => {
         </div>
       }
       {status !== "playing" &&
-        <button className='btn btn-primary btn-lg border-none w-full text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500' onClick={newGame}>New Game</button>
+        <Link href="/" className='btn btn-primary btn-lg border-none w-full text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500' >New Game</Link>
       }
     </div>
   )

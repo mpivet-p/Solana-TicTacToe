@@ -1,5 +1,5 @@
 "use client";
-import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { useAnchorWallet, useConnection, useWallet, WalletContextState } from '@solana/wallet-adapter-react';
 import React, { use, useEffect, useState } from 'react'
 import * as anchor from '@project-serum/anchor';
 import * as web3 from '@solana/web3.js';
@@ -8,7 +8,7 @@ import idl from '../../tictactoe.json';
 const PROGRAM_ID = "H4bSrBW7fkzj4AeaJD5AVdzR3fcBM4DMykcKqHpen48v";
 
 const NewGameForm = () => {
-  const wallet = useWallet();
+  const wallet: WalletContextState = useWallet();
 
   const [pubkey, setPubkey] = useState<string>("");
   const [program, setProgram] = useState<anchor.Program<anchor.Idl>>();

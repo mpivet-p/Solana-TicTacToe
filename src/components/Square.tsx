@@ -12,14 +12,14 @@ const Square = ({ map, index, selected, setSelected, playing, player }
   }) => {
   let res: string = "‎";
 
-  if (map[index - 1] === 1 || (selected === index && player === 0)) {
+  if (map[index] === 1 || (selected === index && player === 0)) {
     res = "X";
-  } else if (map[index - 1] === 2 || (selected === index && player === 1)) {
+  } else if (map[index] === 2 || (selected === index && player === 1)) {
     res = "O"
   }
 
   const onClick = () => {
-    if (playing && map[index - 1] === 0 && selected != index)
+    if (playing && map[index] === 0 && selected != index)
       setSelected(index);
   }
 
