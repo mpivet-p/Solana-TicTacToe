@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react'
 import TicTacToeMap from './TicTacToeMap'
 import { useAnchorWallet, useConnection, useWallet, WalletContextState } from '@solana/wallet-adapter-react';
-import * as anchor from '@project-serum/anchor';
+import * as anchor from '@coral-xyz/anchor';
 import * as web3 from '@solana/web3.js';
 import idl from '@/../tictactoe.json';
 import { type GameAccount } from '@/utils/GameAccount';
+import Link from 'next/link';
 
-const PROGRAM_ID = "H4bSrBW7fkzj4AeaJD5AVdzR3fcBM4DMykcKqHpen48v";
+const PROGRAM_ID = "FwbbVwjZ5zLs2C6Qw1bBMDaWaLymzqoT4WapDZDQ5zGY";
 
 const TicTacToeGame = ({ addr }: { addr: string }) => {
 
@@ -16,26 +17,37 @@ const TicTacToeGame = ({ addr }: { addr: string }) => {
   const [program, setProgram] = useState<anchor.Program<anchor.Idl>>();
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
-  const accountAddr = new web3.PublicKey(addr);
   const pubkey = wallet.publicKey;
+
+  //Ugly protection against invalid addresses
+  try {
+    const tmp = new web3.PublicKey(addr);
+  } catch {
+    return (<div className='m-auto'>Error: Invalid Public key <Link href="/" className='underline'>Main Page</Link></div>);
+  }
+  const accountAddr = new web3.PublicKey(addr);
   
 
   const fetchProgramAccount = async () => {
-    const res = await program?.account.game.fetch(new web3.PublicKey(addr));
-    if (res) {
-      const account: GameAccount = {
-        players: [res.players[0].toString(), res.players[1].toString()],
-        map: res.map,
-        status: res.status
+    try {
+      const res: any = await program?.account.game.fetch(new web3.PublicKey(addr));
+      if (res) {
+        const account: GameAccount = {
+          players: [res.players[0].toString(), res.players[1].toString()],
+          map: res.map,
+          status: res.status
+        }
+        setContent(account);
       }
-      setContent(account);
+    } catch (err) {
+      console.error(err);
     }
   }
 
   const sendPlay = async (coordinates: number, setSelected: (n: number) => void) => {
 
     if (pubkey && coordinates >= 0 && coordinates <= 8) {
-      const tx = await program?.methods
+      const transaction = await program?.methods
       .play(coordinates)
       .accounts({
         game: accountAddr,
@@ -43,24 +55,28 @@ const TicTacToeGame = ({ addr }: { addr: string }) => {
       })
       .transaction();
 
-      if (tx) {
+      if (transaction) {
         const blockhash = await connection.getLatestBlockhash();
 
-        tx.feePayer = pubkey;
-        tx.recentBlockhash = blockhash.blockhash;
+        transaction.feePayer = pubkey;
+        transaction.recentBlockhash = blockhash.blockhash;
 
         if (wallet.signTransaction) {
-          const signedTx = await wallet.signTransaction(tx);
-          
-          // Send the transaction
-          const sig = await connection.sendRawTransaction(signedTx.serialize());
+          try {
+            const signedTx = await wallet.signTransaction(transaction);
+            // Send the transaction
+            const txid = await connection.sendRawTransaction(signedTx.serialize());
 
-          const confirmStrategy: web3.BlockheightBasedTransactionConfirmationStrategy = {
-            blockhash: blockhash.blockhash,
-            lastValidBlockHeight: blockhash.lastValidBlockHeight,
-            signature: sig,
-          };
-          const result = await connection.confirmTransaction(confirmStrategy);
+            const confirmStrategy: web3.BlockheightBasedTransactionConfirmationStrategy = {
+              blockhash: blockhash.blockhash,
+              lastValidBlockHeight: blockhash.lastValidBlockHeight,
+              signature: txid,
+            };
+            const result = await connection.confirmTransaction(confirmStrategy);
+          } catch {
+            console.log("Transaction Error!");
+          }
+
           await fetchProgramAccount();
           setSelected(-1);
         }

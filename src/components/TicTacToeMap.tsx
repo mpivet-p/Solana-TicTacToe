@@ -5,23 +5,37 @@ import './tictactoe.css';
 import { useWallet, WalletContextState } from '@solana/wallet-adapter-react';
 import { type GameAccount } from '@/utils/GameAccount';
 import Link from 'next/link';
-import { setServers } from 'dns';
+
+function getStatusString(gameData: GameAccount, address: string): string {
+  switch (gameData.status) {
+    case 0:
+      return "playing";
+    case 1:
+      return "playing";
+    case 2:
+      return gameData.players[0] === address ? "won" : "lost";
+    case 3:
+      return gameData.players[1] === address ? "won" : "lost";
+    case 4:
+      return "tie";
+  }
+  return "";
+}
 
 const TicTacToeMap = ({ gameData, play, refresh }: {
   gameData: GameAccount,
   play: (coordinates: number, f: (n: number) => void) => void,
   refresh: () => void
 }) => {
+  const [selected, setSelected] = useState<number>(-1);
+
   const wallet: WalletContextState = useWallet();
 
-  const [selected, setSelected] = useState<number>(-1);
 
   const toPlay = gameData.status;
   const map = gameData.map;
-  const status: string = gameData.status <= 1 ? "playing" : "won";
+  const status: string = getStatusString(gameData, wallet.publicKey?.toString() || "");
   const playing: boolean = gameData.status <= 1 && gameData.players[gameData.status] === wallet.publicKey?.toString();
-
-  console.log(gameData);
 
   const sendPlay = () => {
     play(selected, setSelected);
@@ -69,6 +83,12 @@ const TicTacToeMap = ({ gameData, play, refresh }: {
         <div role="alert" className="alert alert-error my-5 w-full">
           <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           <span>You lost!</span>
+        </div>
+      }
+      {status === "tie" &&
+        <div role="alert" className="alert alert-warning my-5 w-full">
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <span>Tie!</span>
         </div>
       }
       {status !== "playing" &&

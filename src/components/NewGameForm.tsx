@@ -1,11 +1,11 @@
 "use client";
 import { useAnchorWallet, useConnection, useWallet, WalletContextState } from '@solana/wallet-adapter-react';
 import React, { use, useEffect, useState } from 'react'
-import * as anchor from '@project-serum/anchor';
+import * as anchor from '@coral-xyz/anchor';
 import * as web3 from '@solana/web3.js';
 import idl from '../../tictactoe.json';
 
-const PROGRAM_ID = "H4bSrBW7fkzj4AeaJD5AVdzR3fcBM4DMykcKqHpen48v";
+const PROGRAM_ID = "FwbbVwjZ5zLs2C6Qw1bBMDaWaLymzqoT4WapDZDQ5zGY";
 
 const NewGameForm = () => {
   const wallet: WalletContextState = useWallet();
@@ -51,19 +51,26 @@ const NewGameForm = () => {
           .transaction();
   
         if (transaction && wallet.signTransaction) {
+          const blockhash = await connection.getLatestBlockhash();
+
           transaction.feePayer = wallet.publicKey;
-          transaction.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+          transaction.recentBlockhash = blockhash.blockhash;
           
           transaction.partialSign(newAccount); //Need this else it says missing signature
 
           //Signature with the user's wallet
-          const signedTransaction = await wallet.signTransaction(transaction);
-          // Sending to rpc          
-          const txid = await connection.sendRawTransaction(signedTransaction.serialize());
+          const signedTx = await wallet.signTransaction(transaction);
+          const txid = await connection.sendRawTransaction(signedTx.serialize());
+
+          const confirmStrategy: web3.BlockheightBasedTransactionConfirmationStrategy = {
+            blockhash: blockhash.blockhash,
+            lastValidBlockHeight: blockhash.lastValidBlockHeight,
+            signature: txid,
+          };
+
+          const result = await connection.confirmTransaction(confirmStrategy);
           
           window.location.href = `/game/${newAccount.publicKey.toString()}`;
-          // console.log("Transaction ID:", txid);
-          // console.log("Program Account Address", newAccount.publicKey.toString());
         }
       } catch (error) {
         console.error("Transaction failed:", error);
